@@ -6,8 +6,12 @@ from rest_framework.response import Response
 from documents.models import Document
 
 from .exporters import export_documents_to_excel
-from .services.analytics import (dashboard_stats, documents_timeline,
-                                 top_counterparties, users_activity)
+from .services.analytics import (
+    dashboard_stats,
+    documents_timeline,
+    top_counterparties,
+    users_activity,
+)
 
 
 @api_view(["GET"])

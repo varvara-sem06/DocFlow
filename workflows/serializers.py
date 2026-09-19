@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from .models import (ApprovalAction, ApprovalRequest, ApprovalRoute,
-                     ApprovalStep)
+from .models import ApprovalAction, ApprovalRequest, ApprovalRoute, ApprovalStep
 
 
 class ApprovalStepSerializer(serializers.ModelSerializer):

@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import (ApprovalAction, ApprovalRequest, ApprovalRoute,
-                     ApprovalStep)
+from .models import ApprovalAction, ApprovalRequest, ApprovalRoute, ApprovalStep
 
 
 class ApprovalStepInline(admin.TabularInline):
