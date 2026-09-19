@@ -1,53 +1,98 @@
-version: "3.9"
-
 services:
   db:
     image: pgvector/pgvector:pg16
+    container_name: docflow_db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: docflow
-      POSTGRES_USER: docflow
-      POSTGRES_PASSWORD: docflow
+      POSTGRES_DB: ${POSTGRES_DB:-docflow}
+      POSTGRES_USER: ${POSTGRES_USER:-docflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docflow}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
+    container_name: docflow_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    container_name: docflow_web
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
+      - media:/app/media
     ports:
       - "8000:8000"
-    depends_on:
-      - db
-      - redis
     env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   worker:
     build: .
+    container_name: docflow_worker
+    restart: unless-stopped
     command: celery -A config worker -l info
     volumes:
       - .:/app
-    depends_on:
-      - db
-      - redis
+      - media:/app/media
     env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   beat:
     build: .
+    container_name: docflow_beat
+    restart: unless-stopped
     command: celery -A config beat -l info
     volumes:
       - .:/app
-    depends_on:
-      - db
-      - redis
     env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   pgdata:
+  redisdata:
+  media:

@@ -1,14 +1,18 @@
 from datetime import timedelta
 from pathlib import Path
 
-# --- Paths ---
-# base.py лежит в config/settings/, значит корень — на 3 уровня выше
+import environ
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+env = environ.Env(
+    DJANGO_DEBUG=(bool, False),
+)
+environ.Env.read_env(BASE_DIR / ".env")
 
 # --- Security ---
-SECRET_KEY = "django-insecure-ld+tad+&y%w(2s!%%eacm^5ut8k@gjiy_5#ry(fg0sxfi8iy(&"
-DEBUG = False
-ALLOWED_HOSTS = []
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+DEBUG = env("DJANGO_DEBUG")
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # --- Applications ---
 DJANGO_APPS = [
@@ -66,11 +70,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# --- Database ---
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("POSTGRES_DB"),
+        "USER": env("POSTGRES_USER"),
+        "PASSWORD": env("POSTGRES_PASSWORD"),
+        "HOST": env("POSTGRES_HOST"),
+        "PORT": env("POSTGRES_PORT"),
     }
 }
 
@@ -122,8 +129,8 @@ SIMPLE_JWT = {
 }
 
 # --- Celery ---
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
