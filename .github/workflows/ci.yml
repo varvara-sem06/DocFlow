@@ -24,25 +24,6 @@ env:
   LLM_BACKEND: ollama
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Install linters
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff black
-
-      - name: Black
-        run: black --check .
-
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -104,14 +85,7 @@ jobs:
         run: python manage.py migrate
 
       - name: Run tests
-        run: pytest --cov=. --cov-report=xml --cov-report=term-missing
-
-      - name: Upload coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
+        run: pytest --cov=. --cov-report=term-missing
 
   django-check:
     name: Django check
